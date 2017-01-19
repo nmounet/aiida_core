@@ -80,6 +80,17 @@ class TestNodeRepository(AiidaTestCase):
                 yield key, value
 
 
+    def test_non_stored_node(self):
+        """
+        Operating on a non-stored node should raise a ValueError
+        """
+        node = Node()
+        repo = NodeRepository(node, self.repository)
+
+        with self.assertRaises(ValueError):
+            repo.print_tree()
+
+
     def test_non_existing_directory(self):
         """
         Retrieving a non-existing directory should raise a ValueError
@@ -109,9 +120,9 @@ class TestNodeRepository(AiidaTestCase):
         """
         node = Node()
         repo = NodeRepository(node, self.repository)
-        data = 'Temporary content'
+        data = StringIO.StringIO('Temporary content')
         tree = {
-            'file_a.dat' : StringIO.StringIO(data)
+            'file_a.dat' : data
         }
 
         self._mock_directory_tree(node, tree)
@@ -130,7 +141,7 @@ class TestNodeRepository(AiidaTestCase):
         """
         node = Node()
         repo = NodeRepository(node, self.repository)
-        data = 'Temporary content'
+        data = StringIO.StringIO('Temporary content')
         tree = {
             'dir_a' : {}
         }
@@ -151,16 +162,16 @@ class TestNodeRepository(AiidaTestCase):
         """
         node = Node()
         repo = NodeRepository(node, self.repository)
-        data = 'Temporary content'
+        data = StringIO.StringIO('Temporary content')
         tree = {
             'dir_a' : {
                 'dir_c' : {
-                    'file_a.dat' : StringIO.StringIO(data)
+                    'file_a.dat' : data
                 },
                 'dir_d' : {}
             },
             'dir_b' : {
-                'file_b.dat' : StringIO.StringIO(data)
+                'file_b.dat' : data
             }
         }
 
@@ -180,36 +191,64 @@ class TestNodeRepository(AiidaTestCase):
 
     def test_ls(self):
         """
-        Test description
+        Store a nested directory structure and test the ls method
         """
         node = Node()
         repo = NodeRepository(node, self.repository)
-        data = 'Temporary content'
+        data = StringIO.StringIO('Temporary content')
         tree = {
             'dir_a' : {
                 'dir_c' : {
-                    'file_a.dat' : StringIO.StringIO(data)
+                    'file_a.dat' : data
                 },
                 'dir_d' : {}
             },
-            'dir_z' : {
-                'file_t.dat' : StringIO.StringIO(data),
-                'file_x.dat' : StringIO.StringIO(data),
-                'file_a.dat' : StringIO.StringIO(data),
-                'file_f.dat' : StringIO.StringIO(data),
-                'dir_x' : {
-                    'dir_dgadf' : {},
-                    'file_a.dat' : StringIO.StringIO(data)
-                },
-                'file_k.dat' : StringIO.StringIO(data),
-            },
             'dir_b' : {
-                'file_b.dat' : StringIO.StringIO(data)
+                'file_b.dat' : data
             }
         }
 
         self._mock_directory_tree(node, tree)
         node.store()
 
-        # print repo.ls()
+        result = [x.path for x in repo.ls()]
+        self.assertEqual(result, [u'dir_a/', u'dir_b/'])
+
+        result = [x.path for x in repo.ls('dir_a/')]
+        self.assertEqual(result, [u'dir_a/dir_c/', u'dir_a/dir_d/'])
+
+
+    def test_tree(self):
+        """
+        Try to print the entire tree of the node's virtual hierarchy
+        """
+        node = Node()
+        repo = NodeRepository(node, self.repository)
+        data = StringIO.StringIO('Temporary content')
+        tree = {
+            'dir_a' : {
+                'dir_c' : {
+                    'file_a.dat' : data
+                },
+                'dir_d' : {}
+            },
+            'dir_z' : {
+                'file_t.dat' : data,
+                'file_x.dat' : data,
+                'file_a.dat' : data,
+                'file_f.dat' : data,
+                'dir_x' : {
+                    'dir_idgaf' : {},
+                    'file_a.dat' : data
+                },
+                'file_k.dat' : data,
+            },
+            'dir_b' : {
+                'file_b.dat' : data
+            }
+        }
+
+        self._mock_directory_tree(node, tree)
+        node.store()
+
         repo.print_tree()
