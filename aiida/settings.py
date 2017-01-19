@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-
+import uuid as UUID
 
 from aiida.backends import settings
 
@@ -39,6 +39,8 @@ DBPASS = profile_conf.get('AIIDADB_PASS', '')
 DBHOST = profile_conf.get('AIIDADB_HOST', '')
 DBPORT = profile_conf.get('AIIDADB_PORT', '')
 REPOSITORY_URI = profile_conf.get('AIIDADB_REPOSITORY_URI', '')
+REPOSITORY_UUID_URI = profile_conf.get('AIIDADB_REPOSITORY_UUID_URI', '')
+REPOSITORY_NAME = profile_conf.get('AIIDADB_REPOSITORY_NAME', '')
 
 
 ## Checks on the REPOSITORY_* variables
@@ -48,9 +50,22 @@ except NameError:
     raise ConfigurationError(
         "Please setup correctly the REPOSITORY_URI variable to "
         "a suitable directory on which you have write permissions.")
+try:
+    REPOSITORY_UUID_URI
+except NameError:
+    raise ConfigurationError(
+        "Please setup correctly the REPOSITORY_UUID_URI variable to "
+        "a suitable file on which you have write permissions.")
+try:
+    REPOSITORY_NAME
+except NameError:
+    raise ConfigurationError(
+        "Please setup correctly the REPOSITORY_NAME variable to "
+        "reflect the label of the repository as it will appear in the database")
 
 # Note: this variable might disappear in the future
 REPOSITORY_PROTOCOL, REPOSITORY_PATH = parse_repository_uri(REPOSITORY_URI)
+REPOSITORY_UUID_PROTOCOL, REPOSITORY_UUID_PATH = parse_repository_uri(REPOSITORY_UUID_URI)
 
 if settings.IN_DOC_MODE:
     pass
@@ -66,5 +81,16 @@ elif REPOSITORY_PROTOCOL == 'file':
                 "Please setup correctly the REPOSITORY_PATH variable to "
                 "a suitable directory on which you have write permissions. "
                 "(I was not able to create the directory.)")
+
+    try:
+        REPOSITORY_UUID = unicode(UUID.uuid4())
+        with open(os.path.join(REPOSITORY_PATH, REPOSITORY_UUID_PATH), 'w') as f:
+            f.write(REPOSITORY_UUID)
+    except OSError:
+        raise ConfigurationError(
+            "Please setup correctly the REPOSITORY_UUID_PATH variable to "
+            "a suitable file to which you have write permissions. "
+            "(I was not able to create the uuid file.)")
+
 else:
     raise ConfigurationError("Only file protocol supported")

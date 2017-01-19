@@ -72,6 +72,23 @@ class Node(AbstractNode):
         # Can be redefined in the subclasses
         self._init_internal_params()
 
+
+        # The new repository implementation no longer uses a Folder instance
+        # but rather should go through the NodeRepository class.
+        # Currently we hardcode the Repository implementation, but this should
+        # be retrieved dynamically from the configuration
+        from aiida import settings
+        from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
+        from aiida.repository.node_repository import NodeRepository
+        repository_config = {
+            'base_path' : settings.REPOSITORY_PATH,
+            'uuid_file' : settings.REPOSITORY_UUID_PATH,
+            'repo_name' : settings.REPOSITORY_NAME,
+        }
+        repository = RepositoryFileSystem(repository_config)
+        self.node_repository = NodeRepository(self, repository)
+
+
         if dbnode is not None:
             if not isinstance(dbnode, DbNode):
                 raise TypeError("dbnode is not a DbNode instance")
@@ -762,7 +779,7 @@ class Node(AbstractNode):
             # On the other hand, periodically the user might need to run some
             # bookkeeping utility to check for lone folders.
             self._repository_folder.replace_with_folder(
-                self._get_temp_folder().abspath, move=True, overwrite=True)
+                self._get_temp_folder().abspath, move=False, overwrite=True)
 
             # I do the transaction only during storage on DB to avoid timeout
             # problems, especially with SQLite
@@ -770,11 +787,29 @@ class Node(AbstractNode):
                 with context_man:
                     # Save the row
                     self._dbnode.save()
+
+
+                    # Loop over all files in the sandbox folder and store them through the NodeRepository class
+                    import os
+                    basepath_abs = self._get_folder_pathsubfolder.abspath
+                    for root, directories, files in os.walk(basepath_abs):
+                        basepath_rel = os.path.relpath(root, basepath_abs)
+                        for directory in directories:
+                            relpath = os.path.normpath(os.path.join(basepath_rel, directory))
+                            self.node_repository.put_directory(relpath)
+                        for file in files:
+                            fullpath = os.path.join(root, file)
+                            relpath  = os.path.normpath(os.path.join(basepath_rel, file))
+                            with open(fullpath, 'rb') as fp:
+                                self.node_repository.put_file(fp, relpath)
+
+
                     # Save its attributes 'manually' without incrementing
                     # the version for each add.
                     DbAttribute.reset_values_for_node(self.dbnode,
                                                       attributes=self._attrs_cache,
                                                       with_transaction=False)
+
                     # This should not be used anymore: I delete it to
                     # possibly free memory
                     del self._attrs_cache
@@ -789,10 +824,10 @@ class Node(AbstractNode):
             # This is one of the few cases where it is ok to do a 'global'
             # except, also because I am re-raising the exception
             except:
-                # I put back the files in the sandbox folder since the
-                # transaction did not succeed
-                self._get_temp_folder().replace_with_folder(
-                    self._repository_folder.abspath, move=True, overwrite=True)
+                # # I put back the files in the sandbox folder since the
+                # # transaction did not succeed
+                # self._get_temp_folder().replace_with_folder(
+                #     self._repository_folder.abspath, move=True, overwrite=True)
                 raise
 
             # Set up autogrouping used be verdi run

@@ -956,6 +956,15 @@ class AbstractNode(object):
         pass
 
     @property
+    def _node_repository(self):
+        """
+        Get the NodeRepository
+
+        :return: the NodeRepository object
+        """
+        return self._node_repository
+
+    @property
     def _repository_folder(self):
         """
         Get the permanent repository folder.

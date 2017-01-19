@@ -58,6 +58,8 @@ db_test_list = {
         'work.workfunction': ['aiida.backends.tests.work.workfunction'],
         'work.legacy.job_process': ['aiida.backends.tests.work.legacy.job_process'],
         'repository': ['aiida.backends.tests.repository'],
+        'repotable': ['aiida.backends.tests.repotable'],
+        'node_repository': ['aiida.backends.tests.node_repository'],
     }
 }
 
