@@ -15,6 +15,15 @@ class Repository(object):
         raise NotImplementedError
 
     @abstractmethod
+    def get_name(self):
+        """
+        Return the name of the repository which is a human-readable label
+
+        :return name: the human readable label associated with this repository
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def get_uuid(self):
         """
         Return the UUID identifying the repository. How and where it is stored

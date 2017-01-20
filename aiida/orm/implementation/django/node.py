@@ -81,8 +81,8 @@ class Node(AbstractNode):
         from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
         from aiida.repository.node_repository import NodeRepository
         repository_config = {
-            'base_path' : settings.REPOSITORY_PATH,
-            'uuid_file' : settings.REPOSITORY_UUID_PATH,
+            'base_path' : settings.REPOSITORY_BASE_PATH,
+            'uuid_path' : settings.REPOSITORY_UUID_PATH,
             'repo_name' : settings.REPOSITORY_NAME,
         }
         repository = RepositoryFileSystem(repository_config)

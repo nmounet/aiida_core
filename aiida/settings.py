@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import uuid as UUID
 
 from aiida.backends import settings
 
@@ -38,59 +37,56 @@ DBUSER = profile_conf.get('AIIDADB_USER', '')
 DBPASS = profile_conf.get('AIIDADB_PASS', '')
 DBHOST = profile_conf.get('AIIDADB_HOST', '')
 DBPORT = profile_conf.get('AIIDADB_PORT', '')
-REPOSITORY_URI = profile_conf.get('AIIDADB_REPOSITORY_URI', '')
-REPOSITORY_UUID_URI = profile_conf.get('AIIDADB_REPOSITORY_UUID_URI', '')
-REPOSITORY_NAME = profile_conf.get('AIIDADB_REPOSITORY_NAME', '')
+REPOSITORY_NAME = profile_conf.get('REPOSITORY_NAME', '')
 
 
-## Checks on the REPOSITORY_* variables
+import errno
+import urlparse
+import tempfile
+
 try:
-    REPOSITORY_URI
-except NameError:
-    raise ConfigurationError(
-        "Please setup correctly the REPOSITORY_URI variable to "
-        "a suitable directory on which you have write permissions.")
+    repo_conf = confs['repositories'][REPOSITORY_NAME]
+except Exception as exception:
+    raise ConfigurationError("The chosen repository '{}' is not defined in the configuration".format(REPOSITORY_NAME))
+
 try:
-    REPOSITORY_UUID_URI
-except NameError:
-    raise ConfigurationError(
-        "Please setup correctly the REPOSITORY_UUID_URI variable to "
-        "a suitable file on which you have write permissions.")
-try:
-    REPOSITORY_NAME
-except NameError:
-    raise ConfigurationError(
-        "Please setup correctly the REPOSITORY_NAME variable to "
-        "reflect the label of the repository as it will appear in the database")
+    repo_type = repo_conf['TYPE'];
+except Exception as exception:
+    raise ConfigurationError("The chosen repository '{}' does not specify a type in 'TYPE'".format(REPOSITORY_NAME))
 
-# Note: this variable might disappear in the future
-REPOSITORY_PROTOCOL, REPOSITORY_PATH = parse_repository_uri(REPOSITORY_URI)
-REPOSITORY_UUID_PROTOCOL, REPOSITORY_UUID_PATH = parse_repository_uri(REPOSITORY_UUID_URI)
+if repo_type == 'filesystem':
+    base_url  = repo_conf.get('BASE_URL', '')
+    uuid_file = repo_conf.get('UUID_FILE', '')
 
-if settings.IN_DOC_MODE:
-    pass
-elif REPOSITORY_PROTOCOL == 'file':
-    if not os.path.isdir(REPOSITORY_PATH):
-        try:
-            # Try to create the local repository folders with needed parent
-            # folders
-            os.makedirs(REPOSITORY_PATH)
-        except OSError:
-            # Possibly here due to permission problems
-            raise ConfigurationError(
-                "Please setup correctly the REPOSITORY_PATH variable to "
-                "a suitable directory on which you have write permissions. "
-                "(I was not able to create the directory.)")
+    parsed_base_url   = urlparse.urlparse(base_url)
+    repository_scheme = parsed_base_url.scheme
+    repository_path   = os.path.normpath(parsed_base_url.path)
 
+    # At this point configured repositories should have been created and initialized
+    # so we verify that the prerequisite resources exist and are accessible
+    if repository_scheme != 'file':
+        raise ConfigurationError("The protocol for a filesystem repository should be 'file://'")
+
+    # Check if the repository directory is writable
     try:
-        REPOSITORY_UUID = unicode(UUID.uuid4())
-        with open(os.path.join(REPOSITORY_PATH, REPOSITORY_UUID_PATH), 'w') as f:
-            f.write(REPOSITORY_UUID)
-    except OSError:
-        raise ConfigurationError(
-            "Please setup correctly the REPOSITORY_UUID_PATH variable to "
-            "a suitable file to which you have write permissions. "
-            "(I was not able to create the uuid file.)")
+        tempfile = tempfile.TemporaryFile(dir=repository_path)
+        tempfile.close()
+    except OSError as e:
+        raise ConfigurationError("The configured base path '{}' is not writable".format(repository_path))
 
+    # Check if the UUID file is readable
+    try:
+        uuid_path = os.path.join(repository_path, uuid_file)
+        with open(uuid_path, 'rb') as fp:
+            fp.read()
+    except IOError as e:
+        raise ConfigurationError("The configured uuid file '{}' is not readable".format(uuid_path))
+
+    # Set global variables
+    REPOSITORY_BASE_PATH = repository_path
+    REPOSITORY_UUID_PATH = uuid_path
+
+elif repo_type == 'swift':
+    raise ConfigurationError("The configured repository type '{}' is not yet implemented".format(repo_type))
 else:
-    raise ConfigurationError("Only file protocol supported")
+    raise ConfigurationError("Unknown repository type '{}'".format(repo_type))

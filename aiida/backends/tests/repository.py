@@ -4,11 +4,7 @@ __license__ = "MIT license, see LICENSE.txt file."
 __version__ = "0.7.1"
 __authors__ = "The AiiDA team."
 
-import os
-import errno
-import shutil
 import StringIO
-import uuid as UUID
 
 from aiida import settings
 from aiida.backends.testbase import AiidaTestCase
@@ -25,8 +21,8 @@ class TestRepository(AiidaTestCase):
         """
         super(TestRepository, cls).setUpClass()
         cls.config = {
-            'base_path' : settings.REPOSITORY_PATH,
-            'uuid_file' : settings.REPOSITORY_UUID_PATH,
+            'base_path' : settings.REPOSITORY_BASE_PATH,
+            'uuid_path' : settings.REPOSITORY_UUID_PATH,
             'repo_name' : settings.REPOSITORY_NAME,
         }
         cls.repository = RepositoryFileSystem(cls.config)

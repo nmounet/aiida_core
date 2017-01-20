@@ -4,9 +4,11 @@ Base class for AiiDA tests
 """
 import os
 import shutil
+import uuid as UUID
 
 from django.utils import unittest
 from aiida import settings
+from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
 from aiida.backends.testimplbase import AiidaTestImplementation
 
 # Add a new entry here if you add a file with tests under aiida.backends.djsite.db.subtests
@@ -44,8 +46,14 @@ class DjangoTests(AiidaTestImplementation):
         """
         Create the repository in the database
         """
-        from aiida.backends.djsite.db.models import DbRepository 
-        dbrepo = DbRepository(repo_name=settings.REPOSITORY_NAME, repo_uuid=settings.REPOSITORY_UUID)
+        from aiida.backends.djsite.db.models import DbRepository
+        repo_config = {
+            'base_path' : settings.REPOSITORY_BASE_PATH,
+            'uuid_path' : settings.REPOSITORY_UUID_PATH,
+            'repo_name' : settings.REPOSITORY_NAME,
+        }
+        repository = RepositoryFileSystem(repo_config)
+        dbrepo = DbRepository(repo_name=settings.REPOSITORY_NAME, repo_uuid=repository.get_uuid())
         dbrepo.save()
 
     def insert_data(self):
@@ -124,21 +132,30 @@ class DjangoTests(AiidaTestImplementation):
 
     # Note this is has to be a normal method, not a class method
     def tearDownClass_method(self):
-        from aiida.settings import REPOSITORY_PATH
+        from aiida.settings import REPOSITORY_BASE_PATH, REPOSITORY_UUID_PATH
         from aiida.common.setup import TEST_KEYWORD
         from aiida.common.exceptions import InvalidOperation
 
         base_repo_path = os.path.basename(
-            os.path.normpath(REPOSITORY_PATH))
+            os.path.normpath(REPOSITORY_BASE_PATH))
         if TEST_KEYWORD not in base_repo_path:
             raise InvalidOperation("Be careful. The repository for the tests "
                                    "is not a test repository. I will not "
                                    "empty the database and I will not delete "
                                    "the repository. Repository path: "
-                                   "{}".format(REPOSITORY_PATH))
+                                   "{}".format(REPOSITORY_BASE_PATH))
 
         self.clean_db()
 
-        # I clean the test repository
-        shutil.rmtree(REPOSITORY_PATH, ignore_errors=True)
-        os.makedirs(REPOSITORY_PATH)
+        # I clean the test repository and recreate it
+        shutil.rmtree(REPOSITORY_BASE_PATH, ignore_errors=True)
+        os.makedirs(REPOSITORY_BASE_PATH)
+
+        # TODO: this should be moved eventually.
+        # At startup, the configuration is parsed and assumes the configured
+        # repository is properly initialized. For the filesystem type this means
+        # that the base directory exists and the UUID is readable from the UUID file.
+        # So we have to recreate a new random UUID here
+        uuid = unicode(UUID.uuid4())
+        with open(REPOSITORY_UUID_PATH, 'w') as f:
+            f.write(uuid)

@@ -83,20 +83,20 @@ def get_repository_folder(subfolder=None):
         return _repository_folder_cache[subfolder]
     except KeyError:
         try:
-            from aiida.settings import REPOSITORY_PATH
+            from aiida.settings import REPOSITORY_BASE_PATH
 
-            if not os.path.isdir(REPOSITORY_PATH):
+            if not os.path.isdir(REPOSITORY_BASE_PATH):
                 raise ImportError
         except ImportError:
             raise ConfigurationError(
-                "The REPOSITORY_PATH variable is not set correctly.")
+                "The REPOSITORY_BASE_PATH variable is not set correctly.")
         if subfolder is None:
-            retval = os.path.abspath(REPOSITORY_PATH)
+            retval = os.path.abspath(REPOSITORY_BASE_PATH)
         elif subfolder == "sandbox":
-            retval = os.path.abspath(os.path.join(REPOSITORY_PATH, 'sandbox'))
+            retval = os.path.abspath(os.path.join(REPOSITORY_BASE_PATH, 'sandbox'))
         elif subfolder == "repository":
             retval = os.path.abspath(
-                os.path.join(REPOSITORY_PATH, 'repository'))
+                os.path.join(REPOSITORY_BASE_PATH, 'repository'))
         else:
             raise ValueError("Invalid 'subfolder' passed to "
                              "get_repository_folder: {}".format(subfolder))

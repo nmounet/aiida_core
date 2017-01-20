@@ -13,10 +13,17 @@ class RepositoryFileSystem(Repository):
 
     def __init__(self, repo_config):
         """
+        Requires the following parameters to properly configure the Repository
+
+         * base_path: Absolute path that points to the root folder of the repository
+         * uuid_path: Absolute path of file that contains the UUID of the repository
+         * repo_name: A human readable label that is stored in the database and is also used
+                      as the key to retrieve the corresponding settings from the configuration
+
         :param repo_config: dictionary with configuration details for repository
         """
-        self.uuid_file = repo_config['uuid_file']
         self.base_path = repo_config['base_path']
+        self.uuid_path = repo_config['uuid_path']
         self.name      = repo_config['repo_name']
 
 
@@ -73,6 +80,15 @@ class RepositoryFileSystem(Repository):
             raise ValueError("Cannot go outside parent directory: '{}'".format(key))
 
 
+    def get_name(self):
+        """
+        Return the name of the repository which is a human-readable label
+
+        :return name: the human readable label associated with this repository
+        """
+        return self.name
+
+
     def get_uuid(self):
         """
         Return the UUID identifying the repository.
@@ -84,12 +100,11 @@ class RepositoryFileSystem(Repository):
         :return uuid: the uuid associated with this repository
         :raise ValueError: raises exception if the file that should contain the repo uuid cannot be read
         """
-        filepath = os.path.join(self.base_path, self.uuid_file)
         try:
-            with open(filepath) as f:
+            with open(self.uuid_path) as f:
                 content = f.read()
         except IOError:
-            raise ValueError("Cannot read '{}' and therefore cannot retrieve the UUID associated with this repository".format(filepath))
+            raise ValueError("Cannot read '{}' and therefore cannot retrieve the UUID associated with this repository".format(self.uuid_path))
 
         return content.strip()
 

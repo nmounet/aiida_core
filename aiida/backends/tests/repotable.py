@@ -23,8 +23,8 @@ class TestRepotable(AiidaTestCase):
         """
         super(TestRepotable, cls).setUpClass()
         cls.config = {
-            'base_path' : settings.REPOSITORY_PATH,
-            'uuid_file' : settings.REPOSITORY_UUID_PATH,
+            'base_path' : settings.REPOSITORY_BASE_PATH,
+            'uuid_path' : settings.REPOSITORY_UUID_PATH,
             'repo_name' : settings.REPOSITORY_NAME,
         }
         cls.repository = RepositoryFileSystem(cls.config)

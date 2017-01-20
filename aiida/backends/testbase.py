@@ -19,7 +19,7 @@ def check_if_tests_can_run():
     from aiida.common.setup import TEST_KEYWORD
 
     base_repo_path = os.path.basename(
-        os.path.normpath(settings2.REPOSITORY_PATH))
+        os.path.normpath(settings2.REPOSITORY_BASE_PATH))
     if (not settings.AIIDADB_PROFILE.startswith(TEST_KEYWORD) or
                 TEST_KEYWORD not in base_repo_path or
             not settings2.DBNAME.startswith(TEST_KEYWORD)):

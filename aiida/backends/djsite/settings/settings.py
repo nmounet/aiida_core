@@ -43,7 +43,7 @@ DBUSER = profile_conf.get('AIIDADB_USER', '')
 DBPASS = profile_conf.get('AIIDADB_PASS', '')
 DBHOST = profile_conf.get('AIIDADB_HOST', '')
 DBPORT = profile_conf.get('AIIDADB_PORT', '')
-REPOSITORY_URI = profile_conf.get('AIIDADB_REPOSITORY_URI', '')
+# REPOSITORY_URI = profile_conf.get('AIIDADB_REPOSITORY_URI', '')
 
 DATABASES = {
     'default': {
@@ -64,33 +64,33 @@ DATABASES = {
 if 'sqlite' in DBENGINE:
     DATABASES['default']['OPTIONS'] = {'timeout': 60}
 
-# Checks on the REPOSITORY_* variables
-try:
-    REPOSITORY_URI
-except NameError:
-    raise ConfigurationError(
-        "Please setup correctly the REPOSITORY_URI variable to "
-        "a suitable directory on which you have write permissions.")
+# # Checks on the REPOSITORY_* variables
+# try:
+#     REPOSITORY_URI
+# except NameError:
+#     raise ConfigurationError(
+#         "Please setup correctly the REPOSITORY_URI variable to "
+#         "a suitable directory on which you have write permissions.")
 
-# Note: this variable might disappear in the future
-REPOSITORY_PROTOCOL, REPOSITORY_PATH = parse_repository_uri(REPOSITORY_URI)
+# # Note: this variable might disappear in the future
+# REPOSITORY_PROTOCOL, REPOSITORY_PATH = parse_repository_uri(REPOSITORY_URI)
 
-if settings.IN_DOC_MODE:
-    pass
-elif REPOSITORY_PROTOCOL == 'file':
-    if not os.path.isdir(REPOSITORY_PATH):
-        try:
-            # Try to create the local repository folders with needed parent
-            # folders
-            os.makedirs(REPOSITORY_PATH)
-        except OSError:
-            # Possibly here due to permission problems
-            raise ConfigurationError(
-                "Please setup correctly the REPOSITORY_PATH variable to "
-                "a suitable directory on which you have write permissions. "
-                "(I was not able to create the directory.)")
-else:
-    raise ConfigurationError("Only file protocol supported")
+# if settings.IN_DOC_MODE:
+#     pass
+# elif REPOSITORY_PROTOCOL == 'file':
+#     if not os.path.isdir(REPOSITORY_PATH):
+#         try:
+#             # Try to create the local repository folders with needed parent
+#             # folders
+#             os.makedirs(REPOSITORY_PATH)
+#         except OSError:
+#             # Possibly here due to permission problems
+#             raise ConfigurationError(
+#                 "Please setup correctly the REPOSITORY_PATH variable to "
+#                 "a suitable directory on which you have write permissions. "
+#                 "(I was not able to create the directory.)")
+# else:
+#     raise ConfigurationError("Only file protocol supported")
 
 # CUSTOM USER CLASS
 AUTH_USER_MODEL = 'db.DbUser'
