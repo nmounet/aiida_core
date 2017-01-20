@@ -53,7 +53,7 @@ class DjangoTests(AiidaTestImplementation):
             'repo_name' : settings.REPOSITORY_NAME,
         }
         repository = RepositoryFileSystem(repo_config)
-        dbrepo = DbRepository(repo_name=settings.REPOSITORY_NAME, repo_uuid=repository.get_uuid())
+        dbrepo = DbRepository(name=settings.REPOSITORY_NAME, uuid=repository.get_uuid())
         dbrepo.save()
 
     def insert_data(self):

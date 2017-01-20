@@ -1968,15 +1968,15 @@ class DbRepository(m.Model):
     Table of available and used repositories
 
     Attributes:
-    * repo_name: Human readable label that also corresponds to the appropriate key in the config
-    * repo_uuid: UUID associated with the repository upon creation
+    * name: Human readable label that also corresponds to the appropriate key in the config
+    * uuid: UUID associated with the repository upon creation
 
     """
-    repo_name = m.CharField(max_length=255, unique=True, blank=False)
-    repo_uuid = UUIDField(auto=False, version=AIIDANODES_UUID_VERSION)
+    name = m.CharField(max_length=255, unique=True, blank=False)
+    uuid = UUIDField(auto=False, version=AIIDANODES_UUID_VERSION)
 
     def __str__(self):
-        return "<DbRepository {}> ({})".format(self.repo_name, self.repo_uuid)
+        return "<DbRepository {}> ({})".format(self.name, self.uuid)
 
 
 @python_2_unicode_compatible

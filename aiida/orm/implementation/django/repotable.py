@@ -174,7 +174,7 @@ class Repotable(AbstractRepotable):
         try:
             sid = transaction.savepoint()
 
-            dbrepo = DbRepository.objects.get(repo_name=repo.name)
+            dbrepo = DbRepository.objects.get(name=repo.name)
             dbfile = DbFile(repository=dbrepo, key=key)
             dbfile.save()
             dbnode = DbNode.objects.get(pk=node.pk)
