@@ -103,7 +103,7 @@ class RepositoryFileSystem(Repository):
         try:
             with open(self.uuid_path) as f:
                 content = f.read()
-        except IOError:
+        except IOError as error:
             raise ValueError("Cannot read '{}' and therefore cannot retrieve the UUID associated with this repository".format(self.uuid_path))
 
         return content.strip()
@@ -140,12 +140,15 @@ class RepositoryFileSystem(Repository):
         if stop_if_exists and self.exists(key):
             raise ValueError("Cannot write to '{}' because the object already exists".format(key))
 
-        path = os.path.join(self.base_path, os.path.dirname(key))
-        self._mkdir(path)
+        directory = os.path.join(self.base_path, os.path.dirname(key))
+        filepath  = os.path.join(self.base_path, key)
 
         try:
-            with open(os.path.join(self.base_path, key), 'w') as f:
+            self._mkdir(directory)
+
+            with open(filepath, 'w') as f:
                 f.write(source.read())
+                source.seek(0)
         except IOError as error:
             raise ValueError("Writing object with key '{}' to '{}' failed".format(key, os.path.join(self.base_path, key)))
 
@@ -168,7 +171,7 @@ class RepositoryFileSystem(Repository):
 
         try:
             key = self.put_object(key, source, True)
-        except ValueError:
+        except ValueError as error:
             raise
 
         return key
@@ -201,6 +204,8 @@ class RepositoryFileSystem(Repository):
         filepath = os.path.join(self.base_path, key)
         try:
             os.remove(filepath)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
+        except OSError as error:
+            if error.errno != errno.ENOENT:
                 raise
+
+        return
