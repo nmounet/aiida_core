@@ -50,7 +50,12 @@ class TestNodeRepository(AiidaTestCase):
 
     def _mock_directory_tree(self, node, tree):
         """
-        Test description
+        Takes a dictionary that represents a file hierarchy and transfers
+        it to the node by creating the directories and files
+
+        The tree variable is a dictionary that represents the hierarchy
+        where a directory is represented by another dictionary and a file
+        is a filelike object
         """
         for path, content in self._tree_leaves(tree):
             if isinstance(content, dict):
@@ -67,7 +72,8 @@ class TestNodeRepository(AiidaTestCase):
 
     def _tree_leaves(self, tree):
         """
-        Test description
+        Recursively unwind the tree object to return the leaves
+        be it empty dictionaries or filelike objects
         """
         import collections
         for key, value in tree.iteritems():
@@ -252,3 +258,30 @@ class TestNodeRepository(AiidaTestCase):
         node.store()
 
         repo.print_tree()
+
+
+    def test_store_test(self):
+        """
+        Store a nested directory structure and retrieve both empty
+        leaf directories and leaf files through the NodeRepository
+        """
+        node = Node()
+        repo = NodeRepository(node, self.repository)
+        data = StringIO.StringIO('Temporary content')
+        tree = {
+            'dir_a' : {
+                'dir_b' : {
+                    'dir_c' : {
+                        'dir_d' : {}
+                    },
+                },
+            },
+        }
+
+        self._mock_directory_tree(node, tree)
+        node.store()
+
+        source = 'dir_a/dir_b/'
+        stored = repo.get_directory(source)
+
+        self.assertEqual(source, stored.path)

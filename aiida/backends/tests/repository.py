@@ -114,3 +114,22 @@ class TestRepository(AiidaTestCase):
         """
         key = 'a/non_existing.dat'
         self.repository.del_object(key)
+
+
+    def test_07(self):
+        """
+        The exists() method should return False for a non-existing key
+        """
+        key = 'a/non_existing.dat'
+        self.assertEqual(self.repository.exists(key), False)
+
+
+    def test_08(self):
+        """
+        The exists() method should return True for an existing key
+        """
+        key    = 'a/non_existing.dat'
+        stream = StringIO.StringIO('content')
+
+        self.repository.put_new_object(key, stream)
+        self.assertEqual(self.repository.exists(key), True)

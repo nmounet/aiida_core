@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
+__copyright__ = u"Copyright (c), This file is part of the AiiDA platform. For further information please visit http://www.aiida.net/. All rights reserved."
+__license__ = "MIT license, see LICENSE.txt file."
+__version__ = "0.7.1"
+__authors__ = "The AiiDA team."
 
 import os
 
 from aiida.common.exceptions import ModificationNotAllowed
 from aiida.orm.implementation.general.repotable import AbstractRepotable
 from aiida.backends.djsite.db.models import DbNode, DbRepository, DbFile, DbNodeFile
-
 from django.db import transaction
-
-__copyright__ = u"Copyright (c), This file is part of the AiiDA platform. For further information please visit http://www.aiida.net/. All rights reserved."
-__license__ = "MIT license, see LICENSE.txt file."
-__version__ = "0.7.1"
-__authors__ = "The AiiDA team."
-
 
 class Repotable(AbstractRepotable):
 
