@@ -2,6 +2,7 @@
 
 import os
 import errno
+import shutil
 
 from abc import ABCMeta, abstractmethod
 from aiida.repository.repository import Repository
@@ -15,16 +16,16 @@ class RepositoryFileSystem(Repository):
         """
         Requires the following parameters to properly configure the Repository
 
-         * base_path: Absolute path that points to the root folder of the repository
-         * uuid_path: Absolute path of file that contains the UUID of the repository
          * repo_name: A human readable label that is stored in the database and is also used
                       as the key to retrieve the corresponding settings from the configuration
+         * base_path: Absolute path that points to the root folder of the repository
+         * uuid_path: Absolute path of file that contains the UUID of the repository
 
         :param repo_config: dictionary with configuration details for repository
         """
+        self.name      = repo_config['repo_name']
         self.base_path = repo_config['base_path']
         self.uuid_path = repo_config['uuid_path']
-        self.name      = repo_config['repo_name']
 
 
     def _mkdir(self, path):
@@ -80,6 +81,20 @@ class RepositoryFileSystem(Repository):
             raise ValueError("Cannot go outside parent directory: '{}'".format(key))
 
 
+    def clean(self):
+        """
+        Completely clean the repository, i.e. remove all objects
+        while making sure that the uuid file is kept
+        """
+        uuid = self.get_uuid()
+
+        shutil.rmtree(self.base_path, ignore_errors=True)
+        os.makedirs(self.base_path)
+
+        with open(self.uuid_path, 'w') as f:
+            f.write(uuid)
+
+
     def get_name(self):
         """
         Return the name of the repository which is a human-readable label
@@ -87,6 +102,18 @@ class RepositoryFileSystem(Repository):
         :return name: the human readable label associated with this repository
         """
         return self.name
+
+
+    def set_uuid(self, uuid):
+        """
+        Store the UUID identifying the repository in itself.
+        Each implementation will decide how to store it.
+
+        :param uuid: the uuid associated with this repository
+        :raise Exception: raises exception if storing failed 
+        """
+        with open(self.uuid_path, 'w') as f:
+            f.write(uuid)
 
 
     def get_uuid(self):

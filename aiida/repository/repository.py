@@ -17,11 +17,30 @@ class Repository(object):
         raise NotImplementedError
 
 
+    def clean(self):
+        """
+        Completely clean the repository, i.e. remove all objects
+        while making sure that the uuid file is kept
+        """
+        raise NotImplementedError
+
+
     def get_name(self):
         """
         Return the name of the repository which is a human-readable label
 
         :return name: the human readable label associated with this repository
+        """
+        raise NotImplementedError
+
+
+    def set_uuid(self, uuid):
+        """
+        Store the UUID identifying the repository in itself.
+        Each implementation will decide how to store it.
+
+        :param uuid: the uuid associated with this repository
+        :raise Exception: raises exception if storing failed 
         """
         raise NotImplementedError
 

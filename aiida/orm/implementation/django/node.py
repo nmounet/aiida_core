@@ -77,15 +77,9 @@ class Node(AbstractNode):
         # but rather should go through the NodeRepository class.
         # Currently we hardcode the Repository implementation, but this should
         # be retrieved dynamically from the configuration
-        from aiida import settings
-        from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
+        from aiida.settings import get_repository
         from aiida.repository.node_repository import NodeRepository
-        repository_config = {
-            'base_path' : settings.REPOSITORY_BASE_PATH,
-            'uuid_path' : settings.REPOSITORY_UUID_PATH,
-            'repo_name' : settings.REPOSITORY_NAME,
-        }
-        repository = RepositoryFileSystem(repository_config)
+        repository = get_repository()
         self.node_repository = NodeRepository(self, repository)
 
 
@@ -791,7 +785,7 @@ class Node(AbstractNode):
 
                     # Loop over all files in the sandbox folder and store them through the NodeRepository class
                     import os
-                    basepath_abs = self._get_folder_pathsubfolder.abspath
+                    basepath_abs = self._get_temp_folder().get_subfolder(self._path_subfolder_name).abspath
                     for root, directories, files in os.walk(basepath_abs):
                         basepath_rel = os.path.relpath(root, basepath_abs)
                         for directory in directories:

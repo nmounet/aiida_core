@@ -7,9 +7,8 @@ __authors__ = "The AiiDA team."
 import os
 import StringIO
 
-from aiida import settings
+from aiida.settings import get_repository
 from aiida.backends.testbase import AiidaTestCase
-from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
 from aiida.repository.node_repository import NodeRepository
 from aiida.orm.node import Node
 from aiida.backends.djsite.db.models import DbFile, DbRepository, DbNode, DbNodeFile
@@ -24,12 +23,7 @@ class TestNodeRepository(AiidaTestCase):
         Executed once before any of the test methods are executed
         """
         super(TestNodeRepository, cls).setUpClass()
-        cls.config = {
-            'base_path' : settings.REPOSITORY_BASE_PATH,
-            'uuid_path' : settings.REPOSITORY_UUID_PATH,
-            'repo_name' : settings.REPOSITORY_NAME,
-        }
-        cls.repository = RepositoryFileSystem(cls.config)
+        cls.repository = get_repository()
 
     @classmethod
     def tearDownClass(cls):
@@ -42,11 +36,14 @@ class TestNodeRepository(AiidaTestCase):
         """
         Executed before each test method
         """
+        super(TestNodeRepository, self).setUp()
 
     def tearDown(self):
         """
         Executed after each test method
         """
+        super(TestNodeRepository, self).tearDown()
+
 
     def _mock_directory_tree(self, node, tree):
         """

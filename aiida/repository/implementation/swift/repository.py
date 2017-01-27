@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import os
+import StringIO
+
 from abc import ABCMeta, abstractmethod
 from aiida.repository.repository import Repository
+from swiftclient.client import Connection
+from swiftclient.client import ClientException
 
 class RepositorySwift(Repository):
     """
@@ -12,12 +17,13 @@ class RepositorySwift(Repository):
         """
         Requires the following parameters to properly configure the Repository
 
+         * repo_name: A human readable label that is stored in the database and is also used
+                      as the key to retrieve the corresponding settings from the configuration
          * uuid_key: Key under which the file containing the UUID is stored
          * auth_url: Fully qualified URI to authentication server
          * auth_version: Version number of authentication scheme
          * auth_user: Username to authenticate
          * auth_key: Key to be used for authentication
-         * auth_cacert: Absolute path to certificate for authentication
          * container: Container name in which objects should be stored
 
         :param repo_config: dictionary with configuration details for repository
@@ -28,23 +34,15 @@ class RepositorySwift(Repository):
         self.auth_version = repo_config['auth_version']
         self.auth_user    = repo_config['auth_user']
         self.auth_key     = repo_config['auth_key']
-        self.auth_cacert  = repo_config['auth_cacert']
         self.container    = repo_config['container']
-        self.os_options   = {
-                                'user_domain_name': 'Default',
-                                'project_name': 'aiida_project',
-                                'project_domain_name': 'Default'
-                            }
 
-        self.connection   = Connection(
-                                authurl=self.auth_url,
-                                user=self.auth_user,
-                                key=self.auth_key,
-                                os_options=self.os_options,
-                                auth_version=self.auth_version,
-                                cacert=self.auth_cacert,
-                                insecure=True,
-                            )
+        self.connection = Connection(
+                            authurl=self.auth_url,
+                            user=self.auth_user,
+                            key=self.auth_key,
+                            auth_version=self.auth_version,
+                            insecure=True,
+                        )
 
 
     def _uniquify(self, key):
@@ -68,9 +66,25 @@ class RepositorySwift(Repository):
     def _validate_key(self, key):
         """
         Validate a key
-        TODO: implement checks for key validity
+
+        :raise ValueError: raises exception if key is not a normalized path
         """
+        if key != os.path.normpath(key):
+            raise ValueError("Only normalized paths are allowed {}".format(os.path.normpath(key)))
         pass
+
+
+    def clean(self):
+        """
+        Completely clean the repository, i.e. remove all objects
+        while making sure that the uuid file is kept
+        """
+        try:
+            for obj in self.get_container(self.container):
+                if obj['name'] != self.uuid_key:
+                    self.del_object(obj['name'])
+        except Exception:
+            return
 
 
     def get_name(self):
@@ -80,6 +94,17 @@ class RepositorySwift(Repository):
         :return name: the human readable label associated with this repository
         """
         return self.name
+
+
+    def set_uuid(self, uuid):
+        """
+        Store the UUID identifying the repository in itself.
+        Each implementation will decide how to store it.
+
+        :param uuid: the uuid associated with this repository
+        :raise Exception: raises exception if storing failed 
+        """
+        self.put_object(self.uuid_key, StringIO.StringIO(uuid))
 
 
     def get_uuid(self):
@@ -128,9 +153,10 @@ class RepositorySwift(Repository):
             raise ValueError("Cannot write to '{}' because the object already exists".format(key))
 
         try:
-            etag = self.connection.put_object(self.container, key, source.getvalue())
+            etag = self.connection.put_object(self.container, key, source.read())
+            source.seek(0)
         except ClientException as exception:
-            raise ValueError("Writing object with key '{}' to '{}' failed".format(key, os.path.join(self.base_path, key)))
+            raise ValueError("Writing object with key '{}' failed".format(key))
 
         return key
 
@@ -174,14 +200,61 @@ class RepositorySwift(Repository):
 
     def del_object(self, key):
         """
-        Delete the object from the repository
+        Delete the object from the repository. Note that if a key does not exist
+        it should simply return without an exception
 
         :param key: fully qualified identifier for the object within the repository
-        :raises: ValueError if object identified by key could not be deleted
+        :raises: ClientException if object identified by key could not be deleted
         """
         try:
-            self.connection.get_object(self.container, key)
+            self.get_object(key)
+        except ValueError as exception:
+            return
+
+        try:
+            self.connection.delete_object(self.container, key)
         except ClientException as exception:
-            raise ValueError("Provided key can not be mapped to an existing object")
+            raise exception
+
+        return
+
+
+    def put_container(self, container):
+        """
+        Documentation string
+        """
+        try:
+            self.connection.put_container(container)
+        except ClientException as exception:
+            raise ValueError("Failed to create the container '{}'".format(container))
+
+        return
+
+
+    def get_container(self, container):
+        """
+        Documentation string
+        """
+        try:
+            _, objects = self.connection.get_container(container)
+        except ClientException as exception:
+            raise ValueError("Failed to retrieve the container '{}': {}".format(container, exception))
+
+        return objects
+
+
+    def del_container(self, container):
+        """
+        Documentation string
+        """
+        try:
+            objects = self.get_container(container)
+            if objects:
+                for obj in objects:
+                    self.del_object(obj['name'])
+
+            self.connection.delete_container(container)
+        except ClientException as exception:
+            raise ValueError("Failed to delete the container '{}': {}".format(container, exception))
 
         return

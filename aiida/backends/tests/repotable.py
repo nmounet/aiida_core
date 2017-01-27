@@ -6,11 +6,10 @@ __authors__ = "The AiiDA team."
 
 import uuid as UUID
 
-from aiida import settings
+from aiida.settings import get_repository
 from aiida.backends.testbase import AiidaTestCase
-from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
-from aiida.orm.repotable import Repotable
 from aiida.orm.node import Node
+from aiida.orm.repotable import Repotable
 
 class TestRepotable(AiidaTestCase):
     """
@@ -22,12 +21,7 @@ class TestRepotable(AiidaTestCase):
         Executed once before any of the test methods are executed
         """
         super(TestRepotable, cls).setUpClass()
-        cls.config = {
-            'base_path' : settings.REPOSITORY_BASE_PATH,
-            'uuid_path' : settings.REPOSITORY_UUID_PATH,
-            'repo_name' : settings.REPOSITORY_NAME,
-        }
-        cls.repository = RepositoryFileSystem(cls.config)
+        cls.repository = get_repository()
         cls.repotable  = Repotable()
 
     @classmethod
@@ -41,11 +35,14 @@ class TestRepotable(AiidaTestCase):
         """
         Executed before each test method
         """
+        super(TestRepotable, self).setUp()
 
     def tearDown(self):
         """
         Executed after each test method
         """
+        super(TestRepotable, self).tearDown()
+
 
     def test_00(self):
         """

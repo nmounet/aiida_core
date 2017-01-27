@@ -4,11 +4,11 @@ __license__ = "MIT license, see LICENSE.txt file."
 __version__ = "0.7.1"
 __authors__ = "The AiiDA team."
 
-import StringIO
+import uuid as UUID
+from StringIO import StringIO
 
-from aiida import settings
+from aiida.settings import get_repository
 from aiida.backends.testbase import AiidaTestCase
-from aiida.repository.implementation.filesystem.repository import RepositoryFileSystem
 
 class TestRepository(AiidaTestCase):
     """
@@ -20,12 +20,7 @@ class TestRepository(AiidaTestCase):
         Executed once before any of the test methods are executed
         """
         super(TestRepository, cls).setUpClass()
-        cls.config = {
-            'base_path' : settings.REPOSITORY_BASE_PATH,
-            'uuid_path' : settings.REPOSITORY_UUID_PATH,
-            'repo_name' : settings.REPOSITORY_NAME,
-        }
-        cls.repository = RepositoryFileSystem(cls.config)
+        cls.repository = get_repository()
 
     @classmethod
     def tearDownClass(cls):
@@ -38,26 +33,21 @@ class TestRepository(AiidaTestCase):
         """
         Executed before each test method
         """
+        super(TestRepository, self).setUp()
 
     def tearDown(self):
         """
         Executed after each test method
         """
-
-
-    def test_get_name(self):
-        """
-        get_name should return the name entered in the constructor
-        """
-        self.assertEqual(self.repository.get_name(), settings.REPOSITORY_NAME)
+        super(TestRepository, self).tearDown()
 
 
     def test_get_uuid(self):
         """
-        get_uuid should return the uuid entered in the constructor
+        get_uuid should return the uuid entered in the constructor or through set_uuid
         """
-        with open(settings.REPOSITORY_UUID_PATH, 'rb') as fp:
-            uuid = fp.read().strip()
+        uuid = unicode(UUID.uuid4())
+        self.repository.set_uuid(uuid)
         self.assertEqual(self.repository.get_uuid(), uuid)
 
 
@@ -74,7 +64,7 @@ class TestRepository(AiidaTestCase):
         The exists() method should return True for an existing key
         """
         key    = 'exists/existing.dat'
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
 
         self.repository.put_new_object(key, stream)
         self.assertEqual(self.repository.exists(key), True)
@@ -86,7 +76,7 @@ class TestRepository(AiidaTestCase):
         without complaints
         """
         key = 'put/object_overwrite.dat'
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
         
         self.repository.put_object(key, stream)
         self.repository.put_object(key, stream)
@@ -101,7 +91,7 @@ class TestRepository(AiidaTestCase):
         and the object already exists
         """
         key = 'put/object_non_overwrite.dat'
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
         
         self.repository.put_object(key, stream)
 
@@ -113,7 +103,7 @@ class TestRepository(AiidaTestCase):
         """
         put_object should only accept normalized paths
         """
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
         with self.assertRaises(ValueError):
             self.repository.put_object('a/../b.dat', stream)
 
@@ -122,7 +112,7 @@ class TestRepository(AiidaTestCase):
         """
         put_object should accept paths with multiple nested non-existing directories
         """
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
         self.repository.put_object('a/b/c/d.dat', stream)
 
 
@@ -130,7 +120,7 @@ class TestRepository(AiidaTestCase):
         """
         put_new_object should guarantee a new unique path if desired path already exists
         """
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
         key_00 = self.repository.put_new_object('a/b.dat', stream)
         key_01 = self.repository.put_new_object('a/b.dat', stream)
         key_02 = self.repository.put_new_object('a/b.dat', stream)
@@ -151,7 +141,7 @@ class TestRepository(AiidaTestCase):
         """
         get_object should return the content of the object given a valid key
         """
-        stream = StringIO.StringIO('content')
+        stream = StringIO('content')
         key = self.repository.put_new_object('get/existing.dat', stream)
         content = self.repository.get_object(key)
 
@@ -163,7 +153,7 @@ class TestRepository(AiidaTestCase):
         del_object should delete an object given a valid key
         """
         key = 'delete/existing.dat'
-        self.repository.put_object(key, StringIO.StringIO())
+        self.repository.put_object(key, StringIO())
         self.repository.del_object(key)
         with self.assertRaises(ValueError):
             self.repository.get_object(key)
