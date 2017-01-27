@@ -81,8 +81,7 @@ class NodeRepository(object):
         :param stop_if_exists: relative path of the directory within the node's virtual hierarchy
         """
         try:
-            self.__repotable.register_directory(node=self.__node, path=path,
-                recursive=recursive, stop_if_exists=stop_if_exists)
+            self.__repotable.register_directory(node=self.__node, path=path)
         except DbNodeFile.DoesNotExist as exception:
             raise ValueError("The path '{}' does not exist".format(path))
         except ValueError as exception:
@@ -101,6 +100,11 @@ class NodeRepository(object):
         Since the register_file method of the Repotable can only be called
         from within the store method of the Node, this method put_file can
         in turn also only be called from within a node's store method
+
+        The Repository might potentially change the key, for example in a
+        naming clash, but will always return the key that is actually used.
+        The call to the Repotable should therefore always use the returned
+        key.
 
         :param source: filelike object with the to be written content
         :param path: relative path of the file within the virtual file hierarchy of the node

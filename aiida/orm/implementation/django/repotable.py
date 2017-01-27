@@ -99,7 +99,7 @@ class Repotable(AbstractRepotable):
         return dbnodefile
 
 
-    def register_directory(self, node, path, recursive=False, stop_if_exists=True):
+    def register_directory(self, node, path):
         """
         Register a directory that is stored in the repository to its corresponding node
 
@@ -122,7 +122,10 @@ class Repotable(AbstractRepotable):
         if node.is_stored:
             raise ModificationNotAllowed("The specified node is already stored and directories can no longer be registered")
 
-        dbnode = DbNode.objects.get(pk=node.pk)
+        try:
+            dbnode = DbNode.objects.get(pk=node.pk)
+        except DbNode.DoesNotExist as exception:
+            raise ValueError("The specified node with pk={} does not exist".format(node.pk))
 
         # Make sure the actual path and basepath have trailing slashes
         dir_fullpath = os.path.join(path, '')
@@ -136,10 +139,8 @@ class Repotable(AbstractRepotable):
 
             if dbnodefile_base:
                 dbnodefile = DbNodeFile(node=dbnode, path=dir_fullpath)
-            if not dbnodefile_base and recursive:
-                self.register_directory(node, dir_basepath, recursive, stop_if_exists)
-            elif not dbnodefile_base:
-                raise ValueError("Basepath does not yet exist and recursive was set to False")
+            else:
+                self.register_directory(node, dir_basepath)
 
         else:
             dbnodefile = DbNodeFile(node=dbnode, path=dir_fullpath)
@@ -161,9 +162,9 @@ class Repotable(AbstractRepotable):
         location where a node instance does have a pk but is not yet 'stored'
 
         :param node: instance of Node
+        :param path: string representing the relative path of the file within the node's virtual hierarchy
         :param repo: instance of Repository
         :param key:  string representing the fully qualified URI of the file within the repository
-        :param path: string representing the relative path of the file within the node's virtual hierarchy
         """
         if node.pk is None:
             raise ValueError("The specified node does not have a pk yet. "
@@ -172,12 +173,21 @@ class Repotable(AbstractRepotable):
             raise ModificationNotAllowed("The specified node is already stored and files can no longer be registered")
 
         try:
+            dbnode = DbNode.objects.get(pk=node.pk)
+        except DbNode.DoesNotExist as exception:
+            raise ValueError("The specified node with pk={} does not exist".format(node.pk))
+
+        try:
+            dbrepo = DbRepository.objects.get(name=repo.name)
+        except DbRepository.DoesNotExist as exception:
+            raise ValueError()
+
+        try:
             sid = transaction.savepoint()
 
-            dbrepo = DbRepository.objects.get(name=repo.name)
             dbfile = DbFile(repository=dbrepo, key=key)
             dbfile.save()
-            dbnode = DbNode.objects.get(pk=node.pk)
+
             dbnodefile = DbNodeFile(file=dbfile, node=dbnode, path=path)
             dbnodefile.save()
 
