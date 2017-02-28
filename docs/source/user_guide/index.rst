@@ -15,18 +15,17 @@ User's guide
    ../examples/pwimmigrant_tutorial
    ../examples/ph_tutorial
    ../examples/cp_tutorial
-   ../examples/wannier90_tutorial
    ../examples/projwfc_tutorial
-   ../parsers/resultmanager
+   ../orm/resultmanager.rst
    ../examples/pseudo_tutorial
    ../verdi/verdi_user_guide
    ../scheduler/index
    ../state/calculation_state
    ../verdi/comments
-   ../database/dbusage
    ../querying/index
    ../work/index
-   ../workflow/index
+   ../old_workflows/index
+   ../import_export/index
    ../dbimporters/index
    ../dbexporters/index
    ../cmdline/scripting_and_shell.rst

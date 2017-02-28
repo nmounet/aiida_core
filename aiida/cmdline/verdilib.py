@@ -43,6 +43,7 @@ from aiida.cmdline.commands.workflow import Workflow
 from aiida.cmdline.commands.work import Work
 from aiida.cmdline.commands.comment import Comment
 from aiida.cmdline.commands.shell import Shell
+from aiida.cmdline.commands.restapi import Restapi
 from aiida.cmdline import execname
 
 __copyright__ = u"Copyright (c), This file is part of the AiiDA platform. For further information please visit http://www.aiida.net/. All rights reserved."
@@ -702,13 +703,14 @@ class Quicksetup(VerdiCommand):
     @click.option('--last-name', prompt='Last Name', type=str)
     @click.option('--institution', prompt='Institution', type=str)
     @click.option('--backend', type=click.Choice([BACKEND_DJANGO,BACKEND_SQLA]), default=BACKEND_SQLA)
+    @click.option('--db-port', type=str)
     @click.option('--db-user', type=str)
     @click.option('--db-user-pw', type=str)
     @click.option('--db-name', type=str)
     @click.option('--profile', type=str)
     @click.option('--repo', type=str)
     @click.pass_obj
-    def _quicksetup_cmd(self, email, first_name, last_name, institution, backend, db_user, db_user_pw, db_name, profile, repo):
+    def _quicksetup_cmd(self, email, first_name, last_name, institution, backend, db_port, db_user, db_user_pw, db_name, profile, repo):
         '''setup a sane aiida configuration with as little interaction as possible.'''
         from aiida.common.setup import create_base_dirs, AIIDA_CONFIG_FOLDER
         create_base_dirs()
